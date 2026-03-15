@@ -5,6 +5,7 @@
 /// aromatic atoms (c, n, o, s, p), charges, and hydrogen counts.
 use petgraph::graph::NodeIndex;
 
+use super::aromaticity::perceive_aromaticity;
 use super::atom::Atom;
 use super::bond::{Bond, BondOrder};
 use super::element::Element;
@@ -16,6 +17,7 @@ pub fn parse_smiles(smiles: &str) -> Result<Molecule, MordredError> {
     let mut parser = SmilesParser::new(smiles);
     parser.parse()?;
     parser.fill_implicit_hydrogens();
+    perceive_aromaticity(&mut parser.mol);
     Ok(parser.mol)
 }
 

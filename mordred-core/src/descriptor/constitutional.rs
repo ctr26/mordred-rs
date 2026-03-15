@@ -39,7 +39,7 @@ impl Descriptor for HeavyAtomCount {
     }
 }
 
-/// Number of bonds between heavy atoms.
+/// Total number of bonds including implicit hydrogen bonds.
 pub struct BondCount;
 
 impl Descriptor for BondCount {
@@ -48,15 +48,16 @@ impl Descriptor for BondCount {
     }
 
     fn description(&self) -> &str {
-        "Bond count (between explicit atoms)"
+        "Bond count (including implicit H bonds)"
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        Ok(mol.bond_count() as f64)
+        let implicit_h_bonds: usize = mol.atoms().map(|(_, a)| a.implicit_h as usize).sum();
+        Ok((mol.bond_count() + implicit_h_bonds) as f64)
     }
 }
 
-/// Molecular weight (average atomic mass, including implicit H).
+/// Molecular weight (monoisotopic exact mass, including implicit H).
 pub struct MolecularWeight;
 
 impl Descriptor for MolecularWeight {
@@ -65,7 +66,7 @@ impl Descriptor for MolecularWeight {
     }
 
     fn description(&self) -> &str {
-        "Molecular weight (average isotope)"
+        "Molecular weight (exact mass, monoisotopic)"
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
@@ -93,22 +94,23 @@ mod tests {
     #[test]
     fn test_ethanol_bond_count() {
         let mol = parse_smiles("CCO").unwrap();
-        assert_eq!(BondCount.calculate(&mol).unwrap(), 2.0);
+        // 2 heavy-atom bonds + 6 implicit H bonds (3+2+1) = 8
+        assert_eq!(BondCount.calculate(&mol).unwrap(), 8.0);
     }
 
     #[test]
     fn test_methane_mw() {
         let mol = parse_smiles("C").unwrap();
         let mw = MolecularWeight.calculate(&mol).unwrap();
-        // CH4 = 12.011 + 4*1.008 = 16.043
-        assert!((mw - 16.043).abs() < 0.01);
+        // CH4 = 12.0 + 4*1.00783 ≈ 16.031
+        assert!((mw - 16.031).abs() < 0.01);
     }
 
     #[test]
     fn test_water_mw() {
         let mol = parse_smiles("O").unwrap();
         let mw = MolecularWeight.calculate(&mol).unwrap();
-        // H2O = 15.999 + 2*1.008 = 18.015
-        assert!((mw - 18.015).abs() < 0.01);
+        // H2O = 15.995 + 2*1.00783 ≈ 18.011
+        assert!((mw - 18.011).abs() < 0.01);
     }
 }

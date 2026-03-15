@@ -5,6 +5,7 @@
 //! [`petgraph`]. The [`smiles`] submodule converts SMILES strings into
 //! [`Molecule`] instances.
 
+pub mod aromaticity;
 pub mod atom;
 pub mod bond;
 pub mod element;
@@ -12,6 +13,7 @@ pub mod mol;
 pub mod rings;
 pub mod smiles;
 
+pub use aromaticity::perceive_aromaticity;
 pub use atom::Atom;
 pub use bond::{Bond, BondOrder};
 pub use element::Element;

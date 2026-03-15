@@ -11,7 +11,7 @@ keywords = ["chemistry", "molecular-descriptors", "cheminformatics", "smiles", "
 categories = ["science", "algorithms"]
 
 [workspace.dependencies]
-mordred-core = { path = "mordred-core", version = "0.2.0" }
+mordred-core = { path = "mordred-core", version = "0.2.1" }
 petgraph = "0.7"
 nalgebra = "0.33"
 rayon = "1.10"

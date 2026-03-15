@@ -89,9 +89,9 @@ impl Molecule {
             .count()
     }
 
-    /// Total molecular weight including implicit hydrogens.
+    /// Total molecular weight (monoisotopic exact mass) including implicit hydrogens.
     pub fn molecular_weight(&self) -> f64 {
-        self.graph.node_weights().map(|a| a.mass()).sum()
+        self.graph.node_weights().map(|a| a.exact_mass()).sum()
     }
 
     /// Iterator over all atoms with their indices.

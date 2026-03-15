@@ -34,8 +34,14 @@ impl Atom {
         explicit_bonds + self.implicit_h
     }
 
-    /// Atomic weight including implicit hydrogens.
+    /// Atomic weight including implicit hydrogens (average mass).
     pub fn mass(&self) -> f64 {
         self.element.atomic_weight() + f64::from(self.implicit_h) * Element::H.atomic_weight()
+    }
+
+    /// Exact (monoisotopic) mass including implicit hydrogens.
+    pub fn exact_mass(&self) -> f64 {
+        self.element.monoisotopic_mass()
+            + f64::from(self.implicit_h) * Element::H.monoisotopic_mass()
     }
 }
