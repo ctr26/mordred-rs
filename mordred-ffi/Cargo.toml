@@ -1,0 +1,16 @@
+[package]
+name = "mordred-ffi"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "C/C++ FFI bindings for mordred-rs molecular descriptor calculator"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+mordred-core = { workspace = true }
+
+[build-dependencies]
+cbindgen = { workspace = true }

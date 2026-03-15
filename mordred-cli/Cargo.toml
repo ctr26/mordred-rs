@@ -1,0 +1,17 @@
+[package]
+name = "mordred-cli"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Command-line interface for mordred-rs molecular descriptor calculator"
+
+[[bin]]
+name = "mordred"
+path = "src/main.rs"
+
+[dependencies]
+mordred-core = { workspace = true }
+clap = { workspace = true }
+serde_json = { workspace = true }
+csv = { workspace = true }
