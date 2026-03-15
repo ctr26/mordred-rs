@@ -1,4 +1,5 @@
 use std::cell::OnceCell;
+use std::collections::HashMap;
 
 use petgraph::algo::floyd_warshall;
 use petgraph::graph::{NodeIndex, UnGraph};
@@ -18,6 +19,8 @@ pub struct Molecule {
     pub graph: UnGraph<Atom, Bond>,
     /// Lazily computed ring information (SSSR).
     ring_info: OnceCell<RingInfo>,
+    /// Lazily computed distance matrix (Floyd-Warshall).
+    dist_cache: OnceCell<HashMap<(NodeIndex, NodeIndex), i64>>,
 }
 
 impl std::fmt::Debug for Molecule {
@@ -33,6 +36,7 @@ impl Clone for Molecule {
         Self {
             graph: self.graph.clone(),
             ring_info: OnceCell::new(),
+            dist_cache: OnceCell::new(),
         }
     }
 }
@@ -43,6 +47,7 @@ impl Molecule {
         Self {
             graph: UnGraph::new_undirected(),
             ring_info: OnceCell::new(),
+            dist_cache: OnceCell::new(),
         }
     }
 
@@ -117,12 +122,13 @@ impl Molecule {
         self.degree(idx) + self.graph[idx].implicit_h as usize
     }
 
-    /// Shortest-path distance matrix using Floyd-Warshall.
-    /// Returns a map from (NodeIndex, NodeIndex) -> distance.
-    pub fn distance_matrix(&self) -> std::collections::HashMap<(NodeIndex, NodeIndex), i64> {
-        // Build a weighted copy where each edge has weight 1
-        let weighted: UnGraph<(), i64> = self.graph.map(|_, _| (), |_, _| 1i64);
-        floyd_warshall(&weighted, |e| *e.weight()).expect("no negative cycles in molecular graph")
+    /// Shortest-path distance matrix using Floyd-Warshall (lazily cached).
+    pub fn distance_matrix(&self) -> &HashMap<(NodeIndex, NodeIndex), i64> {
+        self.dist_cache.get_or_init(|| {
+            let weighted: UnGraph<(), i64> = self.graph.map(|_, _| (), |_, _| 1i64);
+            floyd_warshall(&weighted, |e| *e.weight())
+                .expect("no negative cycles in molecular graph")
+        })
     }
 
     /// Total number of atoms including implicit hydrogens.
