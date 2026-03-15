@@ -8,9 +8,15 @@ use super::bond::Bond;
 use super::element::Element;
 use super::rings::RingInfo;
 
-/// A molecular graph.
+/// A molecular graph backed by an undirected [`petgraph::graph::UnGraph`].
+///
+/// Molecules are constructed via [`parse_smiles`](super::smiles::parse_smiles)
+/// or built manually with [`add_atom`](Self::add_atom) and
+/// [`add_bond`](Self::add_bond).
 pub struct Molecule {
+    /// The underlying atom/bond graph.
     pub graph: UnGraph<Atom, Bond>,
+    /// Lazily computed ring information (SSSR).
     ring_info: OnceCell<RingInfo>,
 }
 
@@ -32,6 +38,7 @@ impl Clone for Molecule {
 }
 
 impl Molecule {
+    /// Creates a new empty molecule.
     pub fn new() -> Self {
         Self {
             graph: UnGraph::new_undirected(),

@@ -80,6 +80,30 @@ impl RustResult {
     fn values(&self) -> Vec<Option<f64>> {
         self.values.clone()
     }
+
+    /// Return results as a dict, replacing missing values with a fill value.
+    #[pyo3(signature = (value = f64::NAN))]
+    fn fill_missing(&self, value: f64) -> HashMap<String, f64> {
+        self.names
+            .iter()
+            .zip(self.values.iter())
+            .map(|(name, val)| (name.clone(), val.unwrap_or(value)))
+            .collect()
+    }
+
+    /// Return results as a dict with only non-missing entries.
+    fn drop_missing(&self) -> HashMap<String, f64> {
+        self.names
+            .iter()
+            .zip(self.values.iter())
+            .filter_map(|(name, val)| val.map(|v| (name.clone(), v)))
+            .collect()
+    }
+
+    /// Alias for ``to_dict()``.
+    fn asdict(&self) -> HashMap<String, Option<f64>> {
+        self.to_dict()
+    }
 }
 
 /// Iterator over RustResult values.

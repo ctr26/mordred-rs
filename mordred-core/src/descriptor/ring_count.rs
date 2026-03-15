@@ -33,7 +33,7 @@ impl RingSizeCount {
     pub fn new(size: usize) -> Self {
         Self {
             size,
-            name: format!("nRing{}", size),
+            name: format!("n{}Ring", size),
             description: format!("Number of {}-membered rings", size),
         }
     }
@@ -109,6 +109,6 @@ mod tests {
     fn test_descriptor_name() {
         assert_eq!(RingCount.name(), "nRing");
         let desc = RingSizeCount::new(5);
-        assert_eq!(desc.name(), "nRing5");
+        assert_eq!(desc.name(), "n5Ring");
     }
 }

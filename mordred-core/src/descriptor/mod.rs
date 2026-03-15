@@ -80,6 +80,12 @@ impl DescriptorSet {
         self.add(Box::new(atom_count::PhosphorusCount));
         self.add(Box::new(atom_count::HalogenCount));
         self.add(Box::new(atom_count::HeteroatomCount));
+        self.add(Box::new(atom_count::HydrogenCount));
+        self.add(Box::new(atom_count::BoronCount));
+        self.add(Box::new(atom_count::FluorineCount));
+        self.add(Box::new(atom_count::ChlorineCount));
+        self.add(Box::new(atom_count::BromineCount));
+        self.add(Box::new(atom_count::IodineCount));
     }
 
     /// Add all ring count descriptors.

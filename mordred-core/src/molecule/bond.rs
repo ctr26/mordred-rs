@@ -33,12 +33,16 @@ impl BondOrder {
 /// A bond between two atoms.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bond {
+    /// Bond order (single, double, triple, or aromatic).
     pub order: BondOrder,
+    /// Whether this bond is part of an aromatic system.
     pub is_aromatic: bool,
+    /// Whether this bond belongs to a ring.
     pub is_ring: bool,
 }
 
 impl Bond {
+    /// Creates a new bond with the given order.
     pub fn new(order: BondOrder) -> Self {
         Self {
             is_aromatic: order == BondOrder::Aromatic,

@@ -35,6 +35,34 @@ element_count_descriptor!(
     Element::P
 );
 
+element_count_descriptor!(BoronCount, "nB", "Number of boron atoms", Element::B);
+element_count_descriptor!(FluorineCount, "nF", "Number of fluorine atoms", Element::F);
+element_count_descriptor!(
+    ChlorineCount,
+    "nCl",
+    "Number of chlorine atoms",
+    Element::Cl
+);
+element_count_descriptor!(BromineCount, "nBr", "Number of bromine atoms", Element::Br);
+element_count_descriptor!(IodineCount, "nI", "Number of iodine atoms", Element::I);
+
+/// Number of hydrogen atoms (explicit + implicit).
+pub struct HydrogenCount;
+
+impl Descriptor for HydrogenCount {
+    fn name(&self) -> &str {
+        "nH"
+    }
+    fn description(&self) -> &str {
+        "Number of hydrogen atoms"
+    }
+    fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
+        let explicit = mol.count_element(Element::H);
+        let implicit: usize = mol.atoms().map(|(_, a)| a.implicit_h as usize).sum();
+        Ok((explicit + implicit) as f64)
+    }
+}
+
 /// Number of halogen atoms (F, Cl, Br, I).
 pub struct HalogenCount;
 
@@ -140,6 +168,27 @@ mod tests {
         // Glycine: NCC(=O)O
         let mol = parse_smiles("NCC(=O)O").unwrap();
         assert_eq!(HeteroatomCount.calculate(&mol).unwrap(), 3.0);
+    }
+
+    #[test]
+    fn test_hydrogen_count_methane() {
+        let mol = parse_smiles("C").unwrap();
+        assert_eq!(HydrogenCount.calculate(&mol).unwrap(), 4.0);
+    }
+
+    #[test]
+    fn test_individual_halogens() {
+        let mol = parse_smiles("FC(Cl)(Br)I").unwrap();
+        assert_eq!(FluorineCount.calculate(&mol).unwrap(), 1.0);
+        assert_eq!(ChlorineCount.calculate(&mol).unwrap(), 1.0);
+        assert_eq!(BromineCount.calculate(&mol).unwrap(), 1.0);
+        assert_eq!(IodineCount.calculate(&mol).unwrap(), 1.0);
+    }
+
+    #[test]
+    fn test_chlorine_count_chloroform() {
+        let mol = parse_smiles("ClC(Cl)Cl").unwrap();
+        assert_eq!(ChlorineCount.calculate(&mol).unwrap(), 3.0);
     }
 
     #[test]

@@ -8,7 +8,23 @@ from typing import Any
 from mordred import descriptors
 from mordred._mordred_core import RustCalculator, RustResult
 
-__all__ = ["Calculator", "descriptors"]
+__all__ = ["Calculator", "descriptors", "is_missing"]
+
+
+def is_missing(value: float | None) -> bool:
+    """Check if a descriptor value is missing.
+
+    Args:
+        value: A descriptor value to check.
+
+    Returns:
+        True if the value is None or NaN.
+    """
+    if value is None:
+        return True
+    import math
+
+    return math.isnan(value)
 
 
 class Calculator:

@@ -44,7 +44,7 @@ pub struct BondCount;
 
 impl Descriptor for BondCount {
     fn name(&self) -> &str {
-        "nBond"
+        "nBonds"
     }
 
     fn description(&self) -> &str {

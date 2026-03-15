@@ -12,7 +12,7 @@ pub struct WienerIndex;
 
 impl Descriptor for WienerIndex {
     fn name(&self) -> &str {
-        "WienerIndex"
+        "WPath"
     }
 
     fn description(&self) -> &str {

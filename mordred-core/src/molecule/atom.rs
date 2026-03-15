@@ -5,14 +5,20 @@ use super::element::Element;
 /// An atom in a molecule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Atom {
+    /// Chemical element of this atom.
     pub element: Element,
+    /// Formal charge (e.g. +1, -1).
     pub charge: i8,
+    /// Whether this atom is part of an aromatic system.
     pub is_aromatic: bool,
+    /// Number of implicit hydrogen atoms.
     pub implicit_h: u8,
+    /// Isotope mass number, if specified.
     pub isotope: Option<u16>,
 }
 
 impl Atom {
+    /// Creates a new atom with the given element and default properties.
     pub fn new(element: Element) -> Self {
         Self {
             element,

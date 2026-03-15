@@ -14,13 +14,13 @@ A Rust reimplementation of [mordred](https://github.com/mordred-descriptor/mordr
 | Python bindings | ✅ PyO3 Calculator class |
 | CLI | ✅ clap, JSON/CSV output |
 
-**Descriptors implemented (31):**
-- Constitutional (4): `nAtom`, `nHeavyAtom`, `nBond`, `MW`
-- Topological (3): `WienerIndex`, `Zagreb1`, `Zagreb2`
+**Descriptors implemented (37):**
+- Constitutional (4): `nAtom`, `nHeavyAtom`, `nBonds`, `MW`
+- Topological (3): `WPath`, `Zagreb1`, `Zagreb2`
 - Connectivity (2): `Chi0`, `Chi1`
-- AtomCount (7): `nC`, `nN`, `nO`, `nS`, `nP`, `nHalo`, `nHetero`
-- BondCount (4): `nSingle`, `nDouble`, `nTriple`, `nAromatic`
-- RingCount (11): `nRing`, `nRing3`–`nRing12`
+- AtomCount (13): `nC`, `nN`, `nO`, `nS`, `nP`, `nX`, `nHetero`, `nH`, `nB`, `nF`, `nCl`, `nBr`, `nI`
+- BondCount (4): `nBondsS`, `nBondsD`, `nBondsT`, `nBondsA`
+- RingCount (11): `nRing`, `n3Ring`–`n12Ring`
 
 ---
 

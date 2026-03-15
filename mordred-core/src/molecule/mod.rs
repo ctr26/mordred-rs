@@ -1,3 +1,10 @@
+//! Molecule representation and SMILES parsing.
+//!
+//! This module provides the core data structures for representing molecules
+//! as undirected graphs of [`Atom`] nodes and [`Bond`] edges, built on
+//! [`petgraph`]. The [`smiles`] submodule converts SMILES strings into
+//! [`Molecule`] instances.
+
 pub mod atom;
 pub mod bond;
 pub mod element;

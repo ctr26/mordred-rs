@@ -26,25 +26,25 @@ macro_rules! bond_count_descriptor {
 
 bond_count_descriptor!(
     SingleBondCount,
-    "nSingle",
+    "nBondsS",
     "Number of single bonds",
     BondOrder::Single
 );
 bond_count_descriptor!(
     DoubleBondCount,
-    "nDouble",
+    "nBondsD",
     "Number of double bonds",
     BondOrder::Double
 );
 bond_count_descriptor!(
     TripleBondCount,
-    "nTriple",
+    "nBondsT",
     "Number of triple bonds",
     BondOrder::Triple
 );
 bond_count_descriptor!(
     AromaticBondCount,
-    "nAromatic",
+    "nBondsA",
     "Number of aromatic bonds",
     BondOrder::Aromatic
 );
