@@ -28,9 +28,11 @@ impl Descriptor for Chi0 {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
+        let props = mol.properties();
         let mut sum = 0.0f64;
         for idx in mol.graph.node_indices() {
-            let delta = mol.total_degree(idx);
+            let implicit_h = mol.graph[idx].implicit_h as u32;
+            let delta = props.degrees[idx.index()] + implicit_h;
             if delta > 0 {
                 sum += 1.0 / (delta as f64).sqrt();
             }
@@ -54,10 +56,11 @@ impl Descriptor for Chi1 {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
+        let props = mol.properties();
         let mut sum = 0.0f64;
         for (a, b, _) in mol.bonds() {
-            let da = mol.total_degree(a);
-            let db = mol.total_degree(b);
+            let da = props.degrees[a.index()] + mol.graph[a].implicit_h as u32;
+            let db = props.degrees[b.index()] + mol.graph[b].implicit_h as u32;
             if da > 0 && db > 0 {
                 sum += 1.0 / ((da * db) as f64).sqrt();
             }

@@ -18,7 +18,7 @@ impl Descriptor for AtomCount {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        Ok(mol.total_atom_count() as f64)
+        Ok(mol.properties().total_atom_count as f64)
     }
 }
 
@@ -35,7 +35,7 @@ impl Descriptor for HeavyAtomCount {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        Ok(mol.heavy_atom_count() as f64)
+        Ok(mol.properties().heavy_atom_count as f64)
     }
 }
 
@@ -52,8 +52,7 @@ impl Descriptor for BondCount {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let implicit_h_bonds: usize = mol.atoms().map(|(_, a)| a.implicit_h as usize).sum();
-        Ok((mol.bond_count() + implicit_h_bonds) as f64)
+        Ok(mol.properties().total_bond_count as f64)
     }
 }
 
@@ -70,7 +69,7 @@ impl Descriptor for MolecularWeight {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        Ok(mol.molecular_weight())
+        Ok(mol.properties().molecular_weight)
     }
 }
 

@@ -18,7 +18,7 @@ macro_rules! element_count_descriptor {
                 $desc
             }
             fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-                Ok(mol.count_element($element) as f64)
+                Ok(mol.properties().element_counts[$element.discriminant_index()] as f64)
             }
         }
     };
@@ -57,9 +57,7 @@ impl Descriptor for HydrogenCount {
         "Number of hydrogen atoms"
     }
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let explicit = mol.count_element(Element::H);
-        let implicit: usize = mol.atoms().map(|(_, a)| a.implicit_h as usize).sum();
-        Ok((explicit + implicit) as f64)
+        Ok(mol.properties().hydrogen_count as f64)
     }
 }
 
@@ -74,16 +72,7 @@ impl Descriptor for HalogenCount {
         "Number of halogen atoms"
     }
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let count = mol
-            .atoms()
-            .filter(|(_, a)| {
-                matches!(
-                    a.element,
-                    Element::F | Element::Cl | Element::Br | Element::I
-                )
-            })
-            .count();
-        Ok(count as f64)
+        Ok(mol.properties().halogen_count as f64)
     }
 }
 
@@ -98,11 +87,7 @@ impl Descriptor for HeteroatomCount {
         "Number of heteroatoms"
     }
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let count = mol
-            .atoms()
-            .filter(|(_, a)| a.element != Element::C && a.element != Element::H)
-            .count();
-        Ok(count as f64)
+        Ok(mol.properties().heteroatom_count as f64)
     }
 }
 

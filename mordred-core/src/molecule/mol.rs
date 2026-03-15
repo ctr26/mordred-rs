@@ -5,9 +5,27 @@ use petgraph::algo::floyd_warshall;
 use petgraph::graph::{NodeIndex, UnGraph};
 
 use super::atom::Atom;
-use super::bond::Bond;
+use super::bond::{Bond, BondOrder};
 use super::element::Element;
 use super::rings::RingInfo;
+
+/// Pre-computed molecular properties from a single pass over atoms and bonds.
+pub struct MolecularProperties {
+    pub element_counts: [u32; 26],
+    pub heavy_atom_count: u32,
+    pub implicit_h_sum: u32,
+    pub total_atom_count: u32,
+    pub molecular_weight: f64,
+    pub single_bond_count: u32,
+    pub double_bond_count: u32,
+    pub triple_bond_count: u32,
+    pub aromatic_bond_count: u32,
+    pub total_bond_count: u32,
+    pub degrees: Vec<u32>,
+    pub halogen_count: u32,
+    pub heteroatom_count: u32,
+    pub hydrogen_count: u32,
+}
 
 /// A molecular graph backed by an undirected [`petgraph::graph::UnGraph`].
 ///
@@ -21,6 +39,8 @@ pub struct Molecule {
     ring_info: OnceCell<RingInfo>,
     /// Lazily computed distance matrix (Floyd-Warshall).
     dist_cache: OnceCell<HashMap<(NodeIndex, NodeIndex), i64>>,
+    /// Lazily computed molecular properties (fused counting).
+    props_cache: OnceCell<MolecularProperties>,
 }
 
 impl std::fmt::Debug for Molecule {
@@ -37,6 +57,7 @@ impl Clone for Molecule {
             graph: self.graph.clone(),
             ring_info: OnceCell::new(),
             dist_cache: OnceCell::new(),
+            props_cache: OnceCell::new(),
         }
     }
 }
@@ -48,6 +69,7 @@ impl Molecule {
             graph: UnGraph::new_undirected(),
             ring_info: OnceCell::new(),
             dist_cache: OnceCell::new(),
+            props_cache: OnceCell::new(),
         }
     }
 
@@ -148,10 +170,81 @@ impl Molecule {
 
     /// Count atoms of a given element.
     pub fn count_element(&self, element: Element) -> usize {
-        self.graph
-            .node_weights()
-            .filter(|a| a.element == element)
-            .count()
+        self.properties().element_counts[element.discriminant_index()] as usize
+    }
+
+    /// Cached molecular properties computed in two passes (1 atom, 1 bond).
+    pub fn properties(&self) -> &MolecularProperties {
+        self.props_cache.get_or_init(|| {
+            let mut element_counts = [0u32; 26];
+            let mut heavy_atom_count = 0u32;
+            let mut implicit_h_sum = 0u32;
+            let mut molecular_weight = 0.0f64;
+            let mut halogen_count = 0u32;
+            let mut heteroatom_count = 0u32;
+            let node_count = self.graph.node_count();
+            let mut degrees = vec![0u32; node_count];
+
+            // Atom pass
+            for idx in self.graph.node_indices() {
+                let atom = &self.graph[idx];
+                let elem = atom.element;
+                element_counts[elem.discriminant_index()] += 1;
+                implicit_h_sum += atom.implicit_h as u32;
+                molecular_weight += atom.exact_mass();
+
+                if elem.is_heavy() {
+                    heavy_atom_count += 1;
+                }
+                if matches!(elem, Element::F | Element::Cl | Element::Br | Element::I) {
+                    halogen_count += 1;
+                }
+                if elem != Element::C && elem != Element::H {
+                    heteroatom_count += 1;
+                }
+
+                // Compute degree (explicit bonds)
+                degrees[idx.index()] = self.graph.neighbors(idx).count() as u32;
+            }
+
+            // explicit H atoms + all implicit H
+            let hydrogen_count = element_counts[Element::H.discriminant_index()]
+                + implicit_h_sum;
+
+            let total_atom_count = node_count as u32 + implicit_h_sum;
+
+            // Bond pass
+            let mut single_bond_count = 0u32;
+            let mut double_bond_count = 0u32;
+            let mut triple_bond_count = 0u32;
+            let mut aromatic_bond_count = 0u32;
+            for edge in self.graph.edge_indices() {
+                match self.graph[edge].order {
+                    BondOrder::Single => single_bond_count += 1,
+                    BondOrder::Double => double_bond_count += 1,
+                    BondOrder::Triple => triple_bond_count += 1,
+                    BondOrder::Aromatic => aromatic_bond_count += 1,
+                }
+            }
+            let total_bond_count = self.graph.edge_count() as u32 + implicit_h_sum;
+
+            MolecularProperties {
+                element_counts,
+                heavy_atom_count,
+                implicit_h_sum,
+                total_atom_count,
+                molecular_weight,
+                single_bond_count,
+                double_bond_count,
+                triple_bond_count,
+                aromatic_bond_count,
+                total_bond_count,
+                degrees,
+                halogen_count,
+                heteroatom_count,
+                hydrogen_count,
+            }
+        })
     }
 }
 

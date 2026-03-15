@@ -3,26 +3,7 @@
 /// Reference: mordred Python `BondCount.py`
 use crate::descriptor::Descriptor;
 use crate::error::MordredError;
-use crate::molecule::{BondOrder, Molecule};
-
-macro_rules! bond_count_descriptor {
-    ($name:ident, $display:expr, $desc:expr, $order:expr) => {
-        pub struct $name;
-
-        impl Descriptor for $name {
-            fn name(&self) -> &str {
-                $display
-            }
-            fn description(&self) -> &str {
-                $desc
-            }
-            fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-                let count = mol.bonds().filter(|(_, _, b)| b.order == $order).count();
-                Ok(count as f64)
-            }
-        }
-    };
-}
+use crate::molecule::Molecule;
 
 /// Number of single bonds including implicit hydrogen bonds.
 pub struct SingleBondCount;
@@ -35,30 +16,55 @@ impl Descriptor for SingleBondCount {
         "Number of single bonds (including implicit H)"
     }
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let explicit_single = mol.bonds().filter(|(_, _, b)| b.order == BondOrder::Single).count();
-        let implicit_h_bonds: usize = mol.atoms().map(|(_, a)| a.implicit_h as usize).sum();
-        Ok((explicit_single + implicit_h_bonds) as f64)
+        let props = mol.properties();
+        Ok((props.single_bond_count + props.implicit_h_sum) as f64)
     }
 }
 
-bond_count_descriptor!(
-    DoubleBondCount,
-    "nBondsD",
-    "Number of double bonds",
-    BondOrder::Double
-);
-bond_count_descriptor!(
-    TripleBondCount,
-    "nBondsT",
-    "Number of triple bonds",
-    BondOrder::Triple
-);
-bond_count_descriptor!(
-    AromaticBondCount,
-    "nBondsA",
-    "Number of aromatic bonds",
-    BondOrder::Aromatic
-);
+/// Number of double bonds.
+pub struct DoubleBondCount;
+
+impl Descriptor for DoubleBondCount {
+    fn name(&self) -> &str {
+        "nBondsD"
+    }
+    fn description(&self) -> &str {
+        "Number of double bonds"
+    }
+    fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
+        Ok(mol.properties().double_bond_count as f64)
+    }
+}
+
+/// Number of triple bonds.
+pub struct TripleBondCount;
+
+impl Descriptor for TripleBondCount {
+    fn name(&self) -> &str {
+        "nBondsT"
+    }
+    fn description(&self) -> &str {
+        "Number of triple bonds"
+    }
+    fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
+        Ok(mol.properties().triple_bond_count as f64)
+    }
+}
+
+/// Number of aromatic bonds.
+pub struct AromaticBondCount;
+
+impl Descriptor for AromaticBondCount {
+    fn name(&self) -> &str {
+        "nBondsA"
+    }
+    fn description(&self) -> &str {
+        "Number of aromatic bonds"
+    }
+    fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
+        Ok(mol.properties().aromatic_bond_count as f64)
+    }
+}
 
 #[cfg(test)]
 mod tests {

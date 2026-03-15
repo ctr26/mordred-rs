@@ -50,11 +50,12 @@ impl Descriptor for ZagrebIndex1 {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let sum: usize = mol
+        let props = mol.properties();
+        let sum: u64 = mol
             .graph
             .node_indices()
             .map(|i| {
-                let d = mol.degree(i);
+                let d = props.degrees[i.index()] as u64;
                 d * d
             })
             .sum();
@@ -75,9 +76,10 @@ impl Descriptor for ZagrebIndex2 {
     }
 
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let sum: usize = mol
+        let props = mol.properties();
+        let sum: u64 = mol
             .bonds()
-            .map(|(a, b, _)| mol.degree(a) * mol.degree(b))
+            .map(|(a, b, _)| props.degrees[a.index()] as u64 * props.degrees[b.index()] as u64)
             .sum();
         Ok(sum as f64)
     }

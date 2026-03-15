@@ -185,4 +185,36 @@ impl Element {
     pub fn is_heavy(self) -> bool {
         self != Self::H
     }
+
+    /// Dense index (0..26) for use in fixed-size arrays (e.g. element histograms).
+    pub fn discriminant_index(self) -> usize {
+        match self {
+            Self::H => 0,
+            Self::He => 1,
+            Self::Li => 2,
+            Self::Be => 3,
+            Self::B => 4,
+            Self::C => 5,
+            Self::N => 6,
+            Self::O => 7,
+            Self::F => 8,
+            Self::Ne => 9,
+            Self::Na => 10,
+            Self::Mg => 11,
+            Self::Al => 12,
+            Self::Si => 13,
+            Self::P => 14,
+            Self::S => 15,
+            Self::Cl => 16,
+            Self::Ar => 17,
+            Self::K => 18,
+            Self::Ca => 19,
+            Self::Br => 20,
+            Self::I => 21,
+            Self::Fe => 22,
+            Self::Cu => 23,
+            Self::Zn => 24,
+            Self::Se => 25,
+        }
+    }
 }
