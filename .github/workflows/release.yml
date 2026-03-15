@@ -9,7 +9,13 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Gate: only release when CI passes
+  ci-check:
+    name: Verify CI
+    uses: ./.github/workflows/ci.yml
+
   release-please:
+    needs: ci-check
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}

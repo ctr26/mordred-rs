@@ -65,13 +65,25 @@ refactor/<description>
 docs/<description>
 ```
 
+### Branching Strategy
+
+```
+feature branches → dev (squash merge) → main (squash merge → release)
+```
+
+- **`main`**: Protected. Production-ready. Merges to `main` trigger automated releases via release-please.
+- **`dev`**: Protected. Integration branch. All feature work targets `dev`.
+- **Feature branches**: Short-lived, branched from `dev`.
+
 ### Pull Requests
 
-1. Create a feature branch: `git checkout -b feat/my-feature`
+1. Create a feature branch from `dev`: `git checkout dev && git checkout -b feat/my-feature`
 2. Make changes following the style guides
 3. Run `make prepush` to verify
 4. Commit with conventional commit messages
-5. Push and open a PR
+5. Push and open a PR **targeting `dev`**
+6. PRs are squash-merged to keep history clean
+7. When `dev` is ready for release, open a PR from `dev` → `main`
 
 ### Adding New Descriptors
 
