@@ -372,17 +372,18 @@ dependencies = [
 
 [[package]]
 name = "mordred-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "csv",
  "mordred-core",
+ "rayon",
  "serde_json",
 ]
 
 [[package]]
 name = "mordred-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "nalgebra",
  "petgraph",
@@ -393,7 +394,7 @@ dependencies = [
 
 [[package]]
 name = "mordred-ffi"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cbindgen",
  "mordred-core",
@@ -401,7 +402,7 @@ dependencies = [
 
 [[package]]
 name = "mordred-py"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "mordred-core",
  "pyo3",
