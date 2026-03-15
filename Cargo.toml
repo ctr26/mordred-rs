@@ -7,6 +7,8 @@ edition = "2024"
 rust-version = "1.87"
 license = "MIT"
 repository = "https://github.com/ctr26/mordred-rs"
+keywords = ["chemistry", "molecular-descriptors", "cheminformatics", "smiles", "mordred"]
+categories = ["science", "algorithms"]
 
 [workspace.dependencies]
 mordred-core = { path = "mordred-core" }

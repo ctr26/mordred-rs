@@ -1,0 +1,4 @@
+# Google style: max function cognitive complexity
+cognitive-complexity-threshold = 25
+# Max lines in a function body
+too-many-lines-threshold = 100

@@ -1,7 +1,14 @@
 """Mordred molecular descriptor calculator -- Rust-powered drop-in replacement."""
 
-from mordred._mordred_core import RustCalculator, RustResult
+from __future__ import annotations
+
+from collections.abc import Generator, Iterable
+from typing import Any
+
 from mordred import descriptors
+from mordred._mordred_core import RustCalculator, RustResult
+
+__all__ = ["Calculator", "descriptors"]
 
 
 class Calculator:
@@ -14,13 +21,13 @@ class Calculator:
             as only 2D descriptors are implemented.
     """
 
-    def __init__(self, descs=None, ignore_3D=False):
+    def __init__(self, descs: Any = None, ignore_3D: bool = False) -> None:  # noqa: N803, D107
         self._inner = RustCalculator()
         self._ignore_3D = ignore_3D
         # *descs* is accepted for API compat; currently all descriptors are
         # always loaded since we only have a fixed set.
 
-    def __call__(self, mol):
+    def __call__(self, mol: Any) -> RustResult:
         """Calculate descriptors for a molecule.
 
         Args:
@@ -32,15 +39,23 @@ class Calculator:
         smiles = _to_smiles(mol)
         return self._inner.calculate(smiles)
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Return the number of descriptors."""
         return len(self._inner)
 
     @property
-    def descriptors(self):
+    def descriptors(self) -> tuple[str, ...]:
         """Tuple of descriptor names."""
         return tuple(self._inner.descriptor_names())
 
-    def pandas(self, mols, quiet=False, ipynb=False, nproc=1, id=-1):
+    def pandas(
+        self,
+        mols: Iterable[Any],
+        quiet: bool = False,
+        ipynb: bool = False,
+        nproc: int = 1,
+        id: int = -1,
+    ) -> Any:
         """Calculate descriptors for multiple molecules.
 
         Args:
@@ -60,7 +75,15 @@ class Calculator:
         data = [r.to_dict() for r in results]
         return pd.DataFrame(data, columns=list(self._inner.descriptor_names()))
 
-    def map(self, mols, nproc=1, nmols=None, quiet=False, ipynb=False, id=-1):
+    def map(
+        self,
+        mols: Iterable[Any],
+        nproc: int = 1,
+        nmols: int | None = None,
+        quiet: bool = False,
+        ipynb: bool = False,
+        id: int = -1,
+    ) -> Generator[RustResult, None, None]:
         """Calculate descriptors over molecules, yielding results.
 
         Args:
@@ -78,7 +101,7 @@ class Calculator:
             yield self(mol)
 
 
-def _to_smiles(mol):
+def _to_smiles(mol: Any) -> str:
     """Convert a molecule input to a SMILES string.
 
     Args:
@@ -102,7 +125,5 @@ def _to_smiles(mol):
             raise ImportError(
                 "RDKit is required to pass Mol objects. "
                 "Install it or pass SMILES strings instead."
-            )
-    raise TypeError(
-        f"Expected SMILES string or RDKit Mol, got {type(mol).__name__}"
-    )
+            ) from None
+    raise TypeError(f"Expected SMILES string or RDKit Mol, got {type(mol).__name__}")

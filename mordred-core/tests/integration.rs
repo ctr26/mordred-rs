@@ -2,11 +2,10 @@
 ///
 /// Reference values computed from molecular structure (not Python mordred)
 /// to verify our SMILES parser + descriptors work end-to-end.
-use mordred_core::descriptor::connectivity::{Chi0, Chi1};
 use mordred_core::descriptor::constitutional::{
     AtomCount, BondCount, HeavyAtomCount, MolecularWeight,
 };
-use mordred_core::descriptor::topological::{WienerIndex, ZagrebIndex1, ZagrebIndex2};
+use mordred_core::descriptor::topological::{WienerIndex, ZagrebIndex1};
 use mordred_core::{Descriptor, DescriptorSet, parse_smiles};
 
 // ─── Benzene: c1ccccc1 ───

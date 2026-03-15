@@ -1,7 +1,11 @@
 """Compatibility utilities for RDKit integration."""
 
+from __future__ import annotations
 
-def mol_to_smiles(mol):
+from typing import Any
+
+
+def mol_to_smiles(mol: Any) -> str:
     """Convert an RDKit Mol object to a SMILES string.
 
     Args:
@@ -21,4 +25,4 @@ def mol_to_smiles(mol):
         raise ImportError(
             "RDKit is required to convert Mol objects. "
             "Install it or pass SMILES strings instead."
-        )
+        ) from None
