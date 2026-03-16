@@ -2,6 +2,7 @@ pub mod atom_count;
 pub mod bond_count;
 pub mod connectivity;
 pub mod constitutional;
+pub mod information_content;
 pub mod ring_count;
 pub mod topological;
 
@@ -42,6 +43,7 @@ impl DescriptorSet {
         set.add_all_atom_counts();
         set.add_all_bond_counts();
         set.add_all_ring_counts();
+        set.add_all_information_content();
         set
     }
 
@@ -94,6 +96,15 @@ impl DescriptorSet {
         for size in 3..=12 {
             self.add(Box::new(ring_count::RingSizeCount::new(size)));
         }
+    }
+
+    /// Add all information content descriptors.
+    pub fn add_all_information_content(&mut self) {
+        self.add(Box::new(information_content::InformationContent));
+        self.add(Box::new(information_content::TotalInformationContent));
+        self.add(Box::new(information_content::StructuralInformationContent));
+        self.add(Box::new(information_content::ComplementaryInformationContent));
+        self.add(Box::new(information_content::BondInformationContent));
     }
 
     /// Add all bond type count descriptors.
