@@ -103,7 +103,9 @@ impl DescriptorSet {
         self.add(Box::new(information_content::InformationContent));
         self.add(Box::new(information_content::TotalInformationContent));
         self.add(Box::new(information_content::StructuralInformationContent));
-        self.add(Box::new(information_content::ComplementaryInformationContent));
+        self.add(Box::new(
+            information_content::ComplementaryInformationContent,
+        ));
         self.add(Box::new(information_content::BondInformationContent));
     }
 

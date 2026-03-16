@@ -157,11 +157,7 @@ fn is_alternating_single_double(orders: &[BondOrder]) -> bool {
 /// - 2 double bonds and 1 heteroatom (N, O, S) that contributes a lone pair
 ///   to make 6 pi electrons (2*2 + 2 = 6), OR
 /// - Alternating single/double with a heteroatom.
-fn is_alternating_5_ring(
-    ring: &[NodeIndex],
-    bond_orders: &[BondOrder],
-    mol: &Molecule,
-) -> bool {
+fn is_alternating_5_ring(ring: &[NodeIndex], bond_orders: &[BondOrder], mol: &Molecule) -> bool {
     let n_double = bond_orders
         .iter()
         .filter(|&&o| o == BondOrder::Double)
@@ -192,7 +188,10 @@ fn is_alternating_5_ring(
 
 /// Check if an element is capable of sp2 hybridization.
 fn is_sp2_capable(elem: Element) -> bool {
-    matches!(elem, Element::C | Element::N | Element::O | Element::S | Element::Se)
+    matches!(
+        elem,
+        Element::C | Element::N | Element::O | Element::S | Element::Se
+    )
 }
 
 /// Recalculate implicit hydrogens for atoms that became aromatic.
@@ -315,11 +314,7 @@ mod tests {
         // is N1C=CC=C1 or similar.
         let mol = parse_smiles("C1=CC=C[NH]1").unwrap();
         // If the ring detection works correctly, atoms should be aromatic.
-        let aromatic_count = mol
-            .graph
-            .node_weights()
-            .filter(|a| a.is_aromatic)
-            .count();
+        let aromatic_count = mol.graph.node_weights().filter(|a| a.is_aromatic).count();
         assert_eq!(aromatic_count, 5, "pyrrole should have 5 aromatic atoms");
     }
 }

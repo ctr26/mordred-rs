@@ -18,6 +18,6 @@ pub use aromaticity::perceive_aromaticity;
 pub use atom::Atom;
 pub use bond::{Bond, BondOrder};
 pub use element::Element;
-pub use mol::{Molecule, MolecularProperties};
+pub use mol::{MolecularProperties, Molecule};
 pub use rings::RingInfo;
 pub use smiles::parse_smiles;

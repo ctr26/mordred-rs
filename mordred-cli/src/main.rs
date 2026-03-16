@@ -203,64 +203,59 @@ fn process_stream(cli: &Cli, descriptor_set: &DescriptorSet, reader: io::BufRead
                 }
             }
         }
-        _ => {
-            loop {
-                chunk.clear();
-                for _ in 0..chunk_size {
-                    match lines.next() {
-                        Some(Ok(line)) => {
-                            let trimmed = line.trim().to_string();
-                            if let Some(smi) = trimmed.split_whitespace().next() {
-                                if !smi.is_empty() {
-                                    chunk.push(smi.to_string());
+        _ => loop {
+            chunk.clear();
+            for _ in 0..chunk_size {
+                match lines.next() {
+                    Some(Ok(line)) => {
+                        let trimmed = line.trim().to_string();
+                        if let Some(smi) = trimmed.split_whitespace().next() {
+                            if !smi.is_empty() {
+                                chunk.push(smi.to_string());
+                            }
+                        }
+                    }
+                    Some(Err(_)) => continue,
+                    None => break,
+                }
+            }
+
+            if chunk.is_empty() {
+                break;
+            }
+
+            let results: Vec<_> = chunk
+                .par_iter()
+                .filter_map(|smi| {
+                    parse_smiles(smi).ok().map(|mol| {
+                        let results = descriptor_set.calculate(&mol);
+                        let mut map = serde_json::Map::new();
+                        map.insert("SMILES".to_string(), serde_json::Value::String(smi.clone()));
+                        for (name, result) in &results {
+                            match result {
+                                Ok(val) => {
+                                    map.insert(
+                                        name.to_string(),
+                                        serde_json::Value::Number(
+                                            serde_json::Number::from_f64(*val)
+                                                .unwrap_or(serde_json::Number::from(0)),
+                                        ),
+                                    );
+                                }
+                                Err(_) => {
+                                    map.insert(name.to_string(), serde_json::Value::Null);
                                 }
                             }
                         }
-                        Some(Err(_)) => continue,
-                        None => break,
-                    }
-                }
-
-                if chunk.is_empty() {
-                    break;
-                }
-
-                let results: Vec<_> = chunk
-                    .par_iter()
-                    .filter_map(|smi| {
-                        parse_smiles(smi).ok().map(|mol| {
-                            let results = descriptor_set.calculate(&mol);
-                            let mut map = serde_json::Map::new();
-                            map.insert(
-                                "SMILES".to_string(),
-                                serde_json::Value::String(smi.clone()),
-                            );
-                            for (name, result) in &results {
-                                match result {
-                                    Ok(val) => {
-                                        map.insert(
-                                            name.to_string(),
-                                            serde_json::Value::Number(
-                                                serde_json::Number::from_f64(*val)
-                                                    .unwrap_or(serde_json::Number::from(0)),
-                                            ),
-                                        );
-                                    }
-                                    Err(_) => {
-                                        map.insert(name.to_string(), serde_json::Value::Null);
-                                    }
-                                }
-                            }
-                            serde_json::Value::Object(map)
-                        })
+                        serde_json::Value::Object(map)
                     })
-                    .collect();
+                })
+                .collect();
 
-                for json in &results {
-                    println!("{}", serde_json::to_string_pretty(json).unwrap());
-                }
+            for json in &results {
+                println!("{}", serde_json::to_string_pretty(json).unwrap());
             }
-        }
+        },
     }
 }
 

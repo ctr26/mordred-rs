@@ -167,9 +167,12 @@ mod tests {
         // IC = -(1/5)*log2(1/5) - (4/5)*log2(4/5)
         let mol = parse_smiles("C").unwrap();
         let ic = InformationContent.calculate(&mol).unwrap();
-        let expected = -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2()
-            - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
-        assert!((ic - expected).abs() < 1e-10, "IC0 methane: got {ic}, expected {expected}");
+        let expected =
+            -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2() - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
+        assert!(
+            (ic - expected).abs() < 1e-10,
+            "IC0 methane: got {ic}, expected {expected}"
+        );
     }
 
     #[test]
@@ -185,30 +188,39 @@ mod tests {
     fn test_tic0_methane() {
         let mol = parse_smiles("C").unwrap();
         let tic = TotalInformationContent.calculate(&mol).unwrap();
-        let expected_ic = -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2()
-            - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
+        let expected_ic =
+            -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2() - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
         let expected = 5.0 * expected_ic;
-        assert!((tic - expected).abs() < 1e-10, "TIC0 methane: got {tic}, expected {expected}");
+        assert!(
+            (tic - expected).abs() < 1e-10,
+            "TIC0 methane: got {tic}, expected {expected}"
+        );
     }
 
     #[test]
     fn test_sic0_methane() {
         let mol = parse_smiles("C").unwrap();
         let sic = StructuralInformationContent.calculate(&mol).unwrap();
-        let expected_ic = -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2()
-            - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
+        let expected_ic =
+            -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2() - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
         let expected = expected_ic / 5.0_f64.log2();
-        assert!((sic - expected).abs() < 1e-10, "SIC0 methane: got {sic}, expected {expected}");
+        assert!(
+            (sic - expected).abs() < 1e-10,
+            "SIC0 methane: got {sic}, expected {expected}"
+        );
     }
 
     #[test]
     fn test_cic0_methane() {
         let mol = parse_smiles("C").unwrap();
         let cic = ComplementaryInformationContent.calculate(&mol).unwrap();
-        let expected_ic = -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2()
-            - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
+        let expected_ic =
+            -(1.0_f64 / 5.0) * (1.0_f64 / 5.0).log2() - (4.0_f64 / 5.0) * (4.0_f64 / 5.0).log2();
         let expected = 5.0_f64.log2() - expected_ic;
-        assert!((cic - expected).abs() < 1e-10, "CIC0 methane: got {cic}, expected {expected}");
+        assert!(
+            (cic - expected).abs() < 1e-10,
+            "CIC0 methane: got {cic}, expected {expected}"
+        );
     }
 
     #[test]
@@ -233,7 +245,10 @@ mod tests {
         // All bonds are single, so entropy = 0, BIC = 0
         let mol = parse_smiles("CCO").unwrap();
         let bic = BondInformationContent.calculate(&mol).unwrap();
-        assert!((bic - 0.0).abs() < 1e-10, "BIC0 ethanol (all single) should be 0, got {bic}");
+        assert!(
+            (bic - 0.0).abs() < 1e-10,
+            "BIC0 ethanol (all single) should be 0, got {bic}"
+        );
     }
 
     #[test]
@@ -256,7 +271,10 @@ mod tests {
         let expected = -(2.0 / 9.0) * (2.0_f64 / 9.0).log2()
             - (1.0 / 9.0) * (1.0_f64 / 9.0).log2()
             - (6.0 / 9.0) * (6.0_f64 / 9.0).log2();
-        assert!((ic - expected).abs() < 1e-10, "IC0 ethanol: got {ic}, expected {expected}");
+        assert!(
+            (ic - expected).abs() < 1e-10,
+            "IC0 ethanol: got {ic}, expected {expected}"
+        );
     }
 
     #[test]

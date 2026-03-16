@@ -204,8 +204,7 @@ impl Molecule {
             let halogen_count = super::simd::count_halogens(&discriminants);
             let heteroatom_count = super::simd::count_heteroatoms(&discriminants);
 
-            let hydrogen_count = element_counts[Element::H.discriminant_index()]
-                + implicit_h_sum;
+            let hydrogen_count = element_counts[Element::H.discriminant_index()] + implicit_h_sum;
             let total_atom_count = node_count as u32 + implicit_h_sum;
 
             // Bond pass

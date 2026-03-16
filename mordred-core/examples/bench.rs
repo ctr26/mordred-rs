@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use mordred_core::{parse_smiles, DescriptorSet};
+use mordred_core::{DescriptorSet, parse_smiles};
 
 fn main() {
     let molecules: Vec<(&str, &str)> = vec![
@@ -38,7 +38,10 @@ fn main() {
         // Larger molecules
         ("citric_acid", "OC(=O)CC(O)(CC(=O)O)C(=O)O"),
         ("glucose", "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O"),
-        ("cholesterol", "CC(C)CCCC(C)C1CCC2C1(CCC3C2CC=C4C3(CCC(C4)O)C)C"),
+        (
+            "cholesterol",
+            "CC(C)CCCC(C)C1CCC2C1(CCC3C2CC=C4C3(CCC(C4)O)C)C",
+        ),
         ("testosterone", "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C"),
         // Polymeric fragments
         ("tripeptide_gly", "NCC(=O)NCC(=O)NCC(=O)O"),
@@ -54,7 +57,10 @@ fn main() {
         ("adamantane", "C1C2CC3CC1CC(C2)C3"),
         // Larger drug
         ("metformin", "CN(C)C(=N)NC(=N)N"),
-        ("sildenafil", "CCCc1nn(C)c2c1nc(nc2OCC)c1cc(ccc1OCC)S(=O)(=O)N1CCN(C)CC1"),
+        (
+            "sildenafil",
+            "CCCc1nn(C)c2c1nc(nc2OCC)c1cc(ccc1OCC)S(=O)(=O)N1CCN(C)CC1",
+        ),
     ];
 
     let set = DescriptorSet::all();
@@ -72,7 +78,11 @@ fn main() {
         .filter_map(|(name, smi)| parse_smiles(smi).ok().map(|mol| (*name, *smi, mol)))
         .collect();
 
-    println!("mordred-rs benchmark ({} descriptors, {} molecules)", set.len(), parsed.len());
+    println!(
+        "mordred-rs benchmark ({} descriptors, {} molecules)",
+        set.len(),
+        parsed.len()
+    );
     println!("=====================================================");
 
     // Per-molecule timings (calc only)
