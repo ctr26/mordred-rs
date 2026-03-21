@@ -11,6 +11,7 @@ pub mod bond;
 pub mod element;
 pub mod mol;
 pub mod rings;
+pub mod simd;
 pub mod smiles;
 
 pub use aromaticity::perceive_aromaticity;

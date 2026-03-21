@@ -173,44 +173,39 @@ impl Molecule {
         self.properties().element_counts[element.discriminant_index()] as usize
     }
 
-    /// Cached molecular properties computed in two passes (1 atom, 1 bond).
+    /// Cached molecular properties computed via SOA extraction + vectorized reductions.
+    ///
+    /// Extracts element discriminants, implicit H values, and masses into
+    /// contiguous arrays, then processes them with tight loops that LLVM
+    /// can auto-vectorize.
     pub fn properties(&self) -> &MolecularProperties {
         self.props_cache.get_or_init(|| {
-            let mut element_counts = [0u32; 26];
-            let mut heavy_atom_count = 0u32;
-            let mut implicit_h_sum = 0u32;
-            let mut molecular_weight = 0.0f64;
-            let mut halogen_count = 0u32;
-            let mut heteroatom_count = 0u32;
             let node_count = self.graph.node_count();
+
+            // SOA extraction: pull fields into contiguous arrays for auto-vectorization
+            let mut discriminants = Vec::with_capacity(node_count);
+            let mut implicit_h_values = Vec::with_capacity(node_count);
+            let mut masses = Vec::with_capacity(node_count);
             let mut degrees = vec![0u32; node_count];
 
-            // Atom pass
             for idx in self.graph.node_indices() {
                 let atom = &self.graph[idx];
-                let elem = atom.element;
-                element_counts[elem.discriminant_index()] += 1;
-                implicit_h_sum += atom.implicit_h as u32;
-                molecular_weight += atom.exact_mass();
-
-                if elem.is_heavy() {
-                    heavy_atom_count += 1;
-                }
-                if matches!(elem, Element::F | Element::Cl | Element::Br | Element::I) {
-                    halogen_count += 1;
-                }
-                if elem != Element::C && elem != Element::H {
-                    heteroatom_count += 1;
-                }
-
-                // Compute degree (explicit bonds)
+                discriminants.push(atom.element.discriminant_index() as u8);
+                implicit_h_values.push(atom.implicit_h);
+                masses.push(atom.exact_mass());
                 degrees[idx.index()] = self.graph.neighbors(idx).count() as u32;
             }
 
-            // explicit H atoms + all implicit H
+            // Vectorized reductions over contiguous arrays
+            let element_counts = super::simd::element_histogram(&discriminants);
+            let implicit_h_sum = super::simd::sum_implicit_h(&implicit_h_values);
+            let molecular_weight = super::simd::sum_molecular_weight(&masses);
+            let heavy_atom_count = super::simd::count_heavy(&discriminants);
+            let halogen_count = super::simd::count_halogens(&discriminants);
+            let heteroatom_count = super::simd::count_heteroatoms(&discriminants);
+
             let hydrogen_count = element_counts[Element::H.discriminant_index()]
                 + implicit_h_sum;
-
             let total_atom_count = node_count as u32 + implicit_h_sum;
 
             // Bond pass

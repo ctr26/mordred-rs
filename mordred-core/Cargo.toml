@@ -6,6 +6,10 @@ rust-version.workspace = true
 license.workspace = true
 description = "Core molecular descriptor calculator — Rust port of mordred"
 
+[features]
+default = []
+simd = []
+
 [dependencies]
 petgraph = { workspace = true }
 nalgebra = { workspace = true }
