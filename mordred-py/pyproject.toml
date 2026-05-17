@@ -12,7 +12,7 @@ license = "MIT"
 [project.optional-dependencies]
 rdkit = []
 pandas = ["pandas"]
-dev = ["pytest", "pandas", "ruff"]
+dev = ["pytest", "pandas", "ruff", "pyyaml"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
