@@ -1,5 +1,6 @@
 pub mod atom_count;
 pub mod bond_count;
+pub mod carbon_types;
 pub mod connectivity;
 pub mod constitutional;
 pub mod information_content;
@@ -44,6 +45,7 @@ impl DescriptorSet {
         set.add_all_bond_counts();
         set.add_all_ring_counts();
         set.add_all_information_content();
+        set.add_all_carbon_types();
         set
     }
 
@@ -107,6 +109,23 @@ impl DescriptorSet {
             information_content::ComplementaryInformationContent,
         ));
         self.add(Box::new(information_content::BondInformationContent));
+    }
+
+    /// Add all carbon-type descriptors: 9 `C{n}SP{m}` counters + `HybRatio`.
+    pub fn add_all_carbon_types(&mut self) {
+        // sp¹: 1 or 2 C neighbors
+        for n in 1..=2 {
+            self.add(Box::new(carbon_types::CarbonTypeCount::new(n, 1)));
+        }
+        // sp²: 1, 2, or 3 C neighbors
+        for n in 1..=3 {
+            self.add(Box::new(carbon_types::CarbonTypeCount::new(n, 2)));
+        }
+        // sp³: 1, 2, 3, or 4 C neighbors
+        for n in 1..=4 {
+            self.add(Box::new(carbon_types::CarbonTypeCount::new(n, 3)));
+        }
+        self.add(Box::new(carbon_types::HybRatio));
     }
 
     /// Add all bond type count descriptors.
