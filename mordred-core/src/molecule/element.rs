@@ -150,34 +150,41 @@ impl Element {
     }
 
     /// Monoisotopic (exact) mass for the most abundant isotope (NIST values).
+    /// Monoisotopic mass of the most abundant isotope.
+    ///
+    /// Values synced to RDKit's `GetPeriodicTable().GetMassForIsotope(...)` so
+    /// that `mordred-rs` is byte-for-byte parity-compatible with upstream
+    /// `mordred-community/mordred` MW outputs. Noble gases (He, Ne, Ar) and
+    /// Li/Be are not in RDKit's exported table; values retained from IUPAC
+    /// AME2016 — none appear in the upstream parity corpus.
     pub fn monoisotopic_mass(self) -> f64 {
         match self {
-            Self::H => 1.00782503207,
+            Self::H => 1.0078250320,
             Self::He => 4.00260325413,
             Self::Li => 7.0160034366,
             Self::Be => 9.012183065,
-            Self::B => 11.00930536,
+            Self::B => 11.0093054000,
             Self::C => 12.0,
-            Self::N => 14.00307400443,
-            Self::O => 15.99491461957,
-            Self::F => 18.99840316273,
+            Self::N => 14.0030740000,
+            Self::O => 15.9949146200,
+            Self::F => 18.9984032200,
             Self::Ne => 19.9924401762,
-            Self::Na => 22.9897692820,
-            Self::Mg => 23.985041697,
-            Self::Al => 26.98153853,
-            Self::Si => 27.97692653465,
-            Self::P => 30.97376199842,
-            Self::S => 31.9720711744,
-            Self::Cl => 34.96885268,
+            Self::Na => 22.9897692800,
+            Self::Mg => 23.9850417000,
+            Self::Al => 26.9815386300,
+            Self::Si => 27.9769265300,
+            Self::P => 30.9737616300,
+            Self::S => 31.9720710000,
+            Self::Cl => 34.9688526800,
             Self::Ar => 39.9623831237,
-            Self::K => 38.9637064864,
-            Self::Ca => 39.962590863,
-            Self::Br => 78.9183376,
-            Self::I => 126.9044719,
-            Self::Fe => 55.9349375,
-            Self::Cu => 62.9295975,
-            Self::Zn => 63.9291420,
-            Self::Se => 79.9165218,
+            Self::K => 38.9637066800,
+            Self::Ca => 39.9625909800,
+            Self::Br => 78.9183371000,
+            Self::I => 126.9044730000,
+            Self::Fe => 55.9349375000,
+            Self::Cu => 62.9295975000,
+            Self::Zn => 63.9291422000,
+            Self::Se => 79.9165213000,
         }
     }
 
