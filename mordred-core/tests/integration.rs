@@ -102,8 +102,8 @@ fn descriptor_set_calculates_all() {
     let results = set.calculate(&mol);
     // 4 constitutional + 3 topological + 2 connectivity + 13 atom count + 4 bond count
     // + 11 ring count + 5 information content + 10 carbon types (9 + HybRatio)
-    // + 1 vertex adjacency + 2 rotatable bond + 2 hbond = 57.
-    assert_eq!(results.len(), 57);
+    // + 1 vertex adjacency + 2 rotatable bond + 2 hbond + 1 mcgowan = 58.
+    assert_eq!(results.len(), 58);
     // All should succeed
     for (name, result) in &results {
         assert!(result.is_ok(), "descriptor {} failed", name);

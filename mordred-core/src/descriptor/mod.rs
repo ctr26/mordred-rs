@@ -5,6 +5,7 @@ pub mod connectivity;
 pub mod constitutional;
 pub mod hbond;
 pub mod information_content;
+pub mod mcgowan_volume;
 pub mod ring_count;
 pub mod rotatable_bond;
 pub mod topological;
@@ -52,6 +53,7 @@ impl DescriptorSet {
         set.add_all_vertex_adjacency();
         set.add_all_rotatable_bond();
         set.add_all_hbond();
+        set.add_all_mcgowan_volume();
         set
     }
 
@@ -149,6 +151,11 @@ impl DescriptorSet {
     pub fn add_all_hbond(&mut self) {
         self.add(Box::new(hbond::HBondDonor));
         self.add(Box::new(hbond::HBondAcceptor));
+    }
+
+    /// Add the `VMcGowan` characteristic-volume descriptor.
+    pub fn add_all_mcgowan_volume(&mut self) {
+        self.add(Box::new(mcgowan_volume::McGowanVolume));
     }
 
     /// Add all bond type count descriptors.
