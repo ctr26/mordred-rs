@@ -5,7 +5,9 @@ pub mod connectivity;
 pub mod constitutional;
 pub mod information_content;
 pub mod ring_count;
+pub mod rotatable_bond;
 pub mod topological;
+pub mod vertex_adjacency;
 
 use crate::error::MordredError;
 use crate::molecule::Molecule;
@@ -46,6 +48,8 @@ impl DescriptorSet {
         set.add_all_ring_counts();
         set.add_all_information_content();
         set.add_all_carbon_types();
+        set.add_all_vertex_adjacency();
+        set.add_all_rotatable_bond();
         set
     }
 
@@ -126,6 +130,17 @@ impl DescriptorSet {
             self.add(Box::new(carbon_types::CarbonTypeCount::new(n, 3)));
         }
         self.add(Box::new(carbon_types::HybRatio));
+    }
+
+    /// Add the `VAdjMat` vertex-adjacency descriptor.
+    pub fn add_all_vertex_adjacency(&mut self) {
+        self.add(Box::new(vertex_adjacency::VertexAdjacencyMagnitude));
+    }
+
+    /// Add rotatable-bond descriptors: `nRot` and `RotRatio`.
+    pub fn add_all_rotatable_bond(&mut self) {
+        self.add(Box::new(rotatable_bond::RotatableBondCount));
+        self.add(Box::new(rotatable_bond::RotatableBondRatio));
     }
 
     /// Add all bond type count descriptors.

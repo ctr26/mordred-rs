@@ -100,8 +100,10 @@ fn descriptor_set_calculates_all() {
     let set = DescriptorSet::all();
     let mol = parse_smiles("CCO").unwrap();
     let results = set.calculate(&mol);
-    // Should have 42 descriptors (4 constitutional + 3 topological + 2 connectivity + 13 atom count + 4 bond count + 11 ring count + 5 information content)
-    assert_eq!(results.len(), 42);
+    // 4 constitutional + 3 topological + 2 connectivity + 13 atom count + 4 bond count
+    // + 11 ring count + 5 information content + 10 carbon types (9 + HybRatio)
+    // + 1 vertex adjacency + 2 rotatable bond = 55.
+    assert_eq!(results.len(), 55);
     // All should succeed
     for (name, result) in &results {
         assert!(result.is_ok(), "descriptor {} failed", name);
