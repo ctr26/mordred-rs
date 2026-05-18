@@ -3,6 +3,7 @@ pub mod bond_count;
 pub mod carbon_types;
 pub mod connectivity;
 pub mod constitutional;
+pub mod hbond;
 pub mod information_content;
 pub mod ring_count;
 pub mod rotatable_bond;
@@ -50,6 +51,7 @@ impl DescriptorSet {
         set.add_all_carbon_types();
         set.add_all_vertex_adjacency();
         set.add_all_rotatable_bond();
+        set.add_all_hbond();
         set
     }
 
@@ -141,6 +143,12 @@ impl DescriptorSet {
     pub fn add_all_rotatable_bond(&mut self) {
         self.add(Box::new(rotatable_bond::RotatableBondCount));
         self.add(Box::new(rotatable_bond::RotatableBondRatio));
+    }
+
+    /// Add hydrogen-bond descriptors: `nHBDon` and `nHBAcc`.
+    pub fn add_all_hbond(&mut self) {
+        self.add(Box::new(hbond::HBondDonor));
+        self.add(Box::new(hbond::HBondAcceptor));
     }
 
     /// Add all bond type count descriptors.
