@@ -50,37 +50,38 @@ But RDKit/mordred apply additional Kekulé constraints (or aromaticity model =
 ### Candidate fixes (pick one, validate with full parity run)
 
 1. **Reject rings that contain an exocyclic-double-bonded C as a ring atom.**
-   Simplest. May regress caffeine pyrimidinedione (test at line 291) — check.
+   Simplest. **Verified to regress caffeine pyrimidinedione** (both carbonyl
+   C's would trigger rejection). Don't use.
 2. **Use RDKit's aromaticity model**: skip rings where any in-ring sp² atom's
    exocyclic-π hybridization is incompatible with the ring's π system
-   (i.e., a `C=O` carbonyl out-of-plane).
+   (i.e., a `C=O` carbonyl out-of-plane). Requires modeling RDKit's
+   Kekulé enforcement; non-trivial.
 3. **Configurable aromaticity model**: expose `AromaticityModel::Rdkit` (the
    default upstream mordred uses) vs `AromaticityModel::Mdl`/`Hueckel` and run
-   parity in Rdkit mode. Most work, cleanest result.
+   parity in Rdkit mode. Most work, cleanest result. **Recommended path
+   forward — needs its own session.**
 
-Option 1 is the smallest patch. Risk: regression on caffeine
-(`test_caffeine_pyrimidinedione_aromatic` at aromaticity.rs:291). Validate by
-running the full `cargo test --workspace` AND the parity gate after the change.
+Geometric distinguishers between ellagic acid lactone (over-marked) and
+caffeine pyrimidinedione (correctly marked) all triggered on caffeine too in
+back-of-envelope checks. The real difference is RDKit's broader Kekulé
+constraint, not a single-atom property.
 
-## Untracked WIP descriptor files (decide before next push)
+## ~~Untracked WIP descriptor files~~ — landed 2026-06-14
 
-Four files staged in `mordred-core/src/descriptor/` (1090 LoC total):
+All four files now wired into `mordred-core/src/descriptor/mod.rs` with
+their unit tests green (125/0 in `cargo test -p mordred-core --lib`):
 
-| File | LoC | Descriptor | Status |
-|---|---:|---|---|
-| `balaban_j.rs` | 202 | BalabanJ topological index | needs unit tests + parity check |
-| `path_count.rs` | 373 | nPath1–nPath10 (n-bond walk counts) | needs parity gate |
-| `topo_psa.rs` | 387 | Topological polar surface area | needs Ertl-table validation |
-| `vabc.rs` | 129 | VABC (van der Waals adjusted) | needs unit tests |
+| File | LoC | Descriptor | Tests | Status |
+|---|---:|---|---:|---|
+| `balaban_j.rs` | 202 | BalabanJ topological index | 6 | landed |
+| `path_count.rs` | 373 | MPC/TMPC/PIPC + nPath\* counts | 8 | landed (1-line API fix: `node_bound` → `node_count`) |
+| `topo_psa.rs` | 387 | Topological polar surface area (Ertl) | 6 | landed |
+| `vabc.rs` | 129 | VABC topological volume | 3 | landed |
 
-**Action options:**
-- (a) Land each as separate commit with tests + parity entry — recommended for
-  rolling them into PR #34's scope.
-- (b) `git stash` or move to `wip/` branch if not ready for review.
-- (c) Delete if superseded — confirm none of these match a more-recent
-  implementation already on the branch.
-
-Do NOT commit them with the aromaticity fix in the same commit.
+Parity gate (Python pytest in `mordred-py`) not exercised in the loop session
+that landed these — `make test-python` needs `maturin develop` + pytest setup.
+**Run that before the next PR-ready push** to confirm none of the 7374 xfails
+regress to fail with the new descriptor outputs.
 
 ## Blockers / watch-outs
 - **gh auth dead**: `gh auth status` reports "token in default is invalid".
@@ -92,10 +93,15 @@ Do NOT commit them with the aromaticity fix in the same commit.
 
 ## Next actions (ordered)
 
-1. Re-mint gh token, `git push` outstanding commits (none beyond
-   `test/upstream-parity-gate` tip — branch is up-to-date with origin).
-2. Triage the 4 untracked WIP descriptor files: land or stash.
-3. Apply Option 1 fix above; run `cargo test --workspace`; if green, run the
-   parity gate and confirm 625 pass / 0 fail; commit.
+1. Re-mint gh token, `git push` outstanding commits (`test/upstream-parity-gate`
+   has new BalabanJ/TopoPSA/VABC/PathCount commits beyond `origin/HEAD`).
+2. Run the parity gate (`cd mordred-py && maturin develop && pytest tests/`)
+   to confirm:
+   - Existing 624/1 baseline preserved.
+   - The 4 newly-landed descriptors haven't promoted any of the 7374 xfails
+     to unexpected fails.
+3. **BIC0 / EllagicAcid**: Option 3 (configurable RDKit-aromaticity model)
+   is the recommended path; deserves its own session. Don't attempt Options 1
+   or 2 — see analysis above.
 4. Update / close issues #31–#33 based on parity gate state.
 5. Push, advance PR #34 to ready-for-review.
