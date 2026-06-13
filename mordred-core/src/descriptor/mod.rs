@@ -7,8 +7,7 @@ pub mod constitutional;
 pub mod hbond;
 pub mod information_content;
 pub mod mcgowan_volume;
-// pub mod path_count;  // WIP: uses petgraph::Graph::node_bound which doesn't
-// exist on the pinned version — needs API migration before re-enabling.
+pub mod path_count;
 pub mod ring_count;
 pub mod rotatable_bond;
 pub mod topo_psa;
