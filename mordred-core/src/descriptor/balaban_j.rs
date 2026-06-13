@@ -18,7 +18,7 @@
 ///   * `mu` = cyclomatic number = `M - N + 1` (for a connected graph),
 ///   * `E`  = set of heavy-atom bonds,
 ///   * `s_i` = row sum of the topological distance matrix, i.e.
-///             `Σ_j d(i, j)` over all heavy atoms `j != i`.
+///     `Σ_j d(i, j)` over all heavy atoms `j != i`.
 ///
 /// Edge cases:
 ///   * For graphs with fewer than 2 atoms or no bonds, J is defined to be 0.
@@ -123,7 +123,12 @@ mod tests {
         let mol = parse_smiles("CCC").unwrap();
         let v = BalabanJ.calculate(&mol).unwrap();
         let expected = 4.0 / 6.0f64.sqrt();
-        assert!(approx(v, expected, 1e-9), "propane J = {} expected {}", v, expected);
+        assert!(
+            approx(v, expected, 1e-9),
+            "propane J = {} expected {}",
+            v,
+            expected
+        );
     }
 
     #[test]
@@ -139,7 +144,12 @@ mod tests {
         let mol = parse_smiles("CCCC").unwrap();
         let v = BalabanJ.calculate(&mol).unwrap();
         let expected = 3.0 * (2.0 / 24.0f64.sqrt() + 0.25);
-        assert!(approx(v, expected, 1e-9), "butane J = {} expected {}", v, expected);
+        assert!(
+            approx(v, expected, 1e-9),
+            "butane J = {} expected {}",
+            v,
+            expected
+        );
     }
 
     #[test]
@@ -155,7 +165,12 @@ mod tests {
         let v = BalabanJ.calculate(&mol).unwrap();
         let s = 2.0 / 165.0f64.sqrt() + 2.0 / 99.0f64.sqrt() + 1.0 / 9.0;
         let expected = 5.0 * s;
-        assert!(approx(v, expected, 1e-9), "hexane J = {} expected {}", v, expected);
+        assert!(
+            approx(v, expected, 1e-9),
+            "hexane J = {} expected {}",
+            v,
+            expected
+        );
         // Sanity: textbook value ≈ 2.339
         assert!(approx(v, 2.3389, 1e-3), "hexane J = {} (textbook 2.339)", v);
     }
@@ -197,6 +212,11 @@ mod tests {
         let mol = parse_smiles("CC(C)C").unwrap();
         let v = BalabanJ.calculate(&mol).unwrap();
         let expected = 9.0 / 15.0f64.sqrt();
-        assert!(approx(v, expected, 1e-9), "isobutane J = {} expected {}", v, expected);
+        assert!(
+            approx(v, expected, 1e-9),
+            "isobutane J = {} expected {}",
+            v,
+            expected
+        );
     }
 }

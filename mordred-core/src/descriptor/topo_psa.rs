@@ -335,10 +335,7 @@ mod tests {
     #[test]
     fn topo_psa_epicatechin() {
         // 5 OH + 1 ring O — upstream 110.38.
-        let mol = parse_smiles(
-            "C1[C@H]([C@H](OC2=CC(=CC(=C21)O)O)C3=CC(=C(C=C3)O)O)O",
-        )
-        .unwrap();
+        let mol = parse_smiles("C1[C@H]([C@H](OC2=CC(=CC(=C21)O)O)C3=CC(=C(C=C3)O)O)O").unwrap();
         let v = TopoPSA::new(true).calculate(&mol).unwrap();
         assert!(approx(v, 110.38, 1e-2), "TopoPSA(NO) Epicatechin: got {v}");
     }

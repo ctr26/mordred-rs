@@ -42,8 +42,7 @@ pub fn perceive_aromaticity(mol: &mut Molecule) {
     // fused ring has been marked (its bonds become Aromatic, which then count
     // as in-ring π contributors). EllagicAcid's lactones and the chromenylium
     // core of Cyanidin need this propagation.
-    let mut aromatic_atoms: std::collections::HashSet<NodeIndex> =
-        std::collections::HashSet::new();
+    let mut aromatic_atoms: std::collections::HashSet<NodeIndex> = std::collections::HashSet::new();
     let mut newly_marked = true;
     while newly_marked {
         newly_marked = false;
@@ -62,9 +61,7 @@ pub fn perceive_aromaticity(mol: &mut Molecule) {
                 }
             }
             for i in 0..ring.len() {
-                if let Some(edge) =
-                    mol.graph.find_edge(ring[i], ring[(i + 1) % ring.len()])
-                {
+                if let Some(edge) = mol.graph.find_edge(ring[i], ring[(i + 1) % ring.len()]) {
                     let bond = &mut mol.graph[edge];
                     bond.order = BondOrder::Aromatic;
                     bond.is_aromatic = true;
@@ -109,8 +106,8 @@ fn is_aromatic_ring(mol: &Molecule, ring: &[NodeIndex]) -> bool {
 
     let ring_set: std::collections::HashSet<NodeIndex> = ring.iter().copied().collect();
     let mut pi: u32 = 0;
-    for i in 0..n {
-        match ring_pi_contribution(mol, ring[i], &ring_set, &bond_orders, i) {
+    for (i, &atom) in ring.iter().enumerate().take(n) {
+        match ring_pi_contribution(mol, atom, &ring_set, &bond_orders, i) {
             Some(p) => pi += p,
             None => return false,
         }
@@ -131,8 +128,13 @@ fn ring_pi_contribution(
     let prev = bond_orders[(i + n - 1) % n];
     let next = bond_orders[i];
 
-    let in_ring_pi = matches!(prev, BondOrder::Double | BondOrder::Aromatic | BondOrder::Triple)
-        || matches!(next, BondOrder::Double | BondOrder::Aromatic | BondOrder::Triple);
+    let in_ring_pi = matches!(
+        prev,
+        BondOrder::Double | BondOrder::Aromatic | BondOrder::Triple
+    ) || matches!(
+        next,
+        BondOrder::Double | BondOrder::Aromatic | BondOrder::Triple
+    );
     if in_ring_pi {
         return Some(1);
     }
@@ -308,8 +310,7 @@ mod tests {
         // lactones). Aromaticity propagates through the fused system via the
         // fixpoint loop — lactone rings only register aromatic after their
         // adjacent benzene rings are marked.
-        let mol =
-            parse_smiles("C1=C2C3=C(C(=C1O)O)OC(=O)C4=CC(=C(C(=C43)OC2=O)O)O").unwrap();
+        let mol = parse_smiles("C1=C2C3=C(C(=C1O)O)OC(=O)C4=CC(=C(C(=C43)OC2=O)O)O").unwrap();
         let aromatic_atoms = mol.graph.node_weights().filter(|a| a.is_aromatic).count();
         assert!(
             aromatic_atoms >= 14,

@@ -8,7 +8,6 @@
 /// denominator. Reference: upstream `mordred/CarbonTypes.py` (PaDEL-descriptor
 /// formulation).
 use petgraph::graph::NodeIndex;
-use petgraph::visit::EdgeRef;
 
 use crate::descriptor::Descriptor;
 use crate::error::MordredError;
@@ -29,11 +28,7 @@ fn carbon_hybridization(mol: &Molecule, idx: NodeIndex, atom: &Atom) -> u8 {
             BondOrder::Single => {}
         }
     }
-    if has_double {
-        2
-    } else {
-        3
-    }
+    if has_double { 2 } else { 3 }
 }
 
 fn count_carbon_neighbors(mol: &Molecule, idx: NodeIndex) -> u8 {
@@ -56,9 +51,8 @@ pub struct CarbonTypeCount {
 impl CarbonTypeCount {
     pub fn new(n_c_neighbors: u8, sp_class: u8) -> Self {
         let name = format!("C{n_c_neighbors}SP{sp_class}");
-        let description = format!(
-            "Number of sp{sp_class} carbons with {n_c_neighbors} carbon neighbors"
-        );
+        let description =
+            format!("Number of sp{sp_class} carbons with {n_c_neighbors} carbon neighbors");
         Self {
             n_c_neighbors,
             sp_class,

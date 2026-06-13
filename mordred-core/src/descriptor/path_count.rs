@@ -45,7 +45,16 @@ fn compute_path_counts(mol: &Molecule, max_order: usize) -> (Vec<u64>, Vec<f64>)
 
     for &start in &nodes {
         visited[start.index()] = true;
-        dfs(mol, start, &mut visited, 0, max_order, 1.0, &mut mpc, &mut pi);
+        dfs(
+            mol,
+            start,
+            &mut visited,
+            0,
+            max_order,
+            1.0,
+            &mut mpc,
+            &mut pi,
+        );
         visited[start.index()] = false;
     }
 
@@ -57,6 +66,7 @@ fn compute_path_counts(mol: &Molecule, max_order: usize) -> (Vec<u64>, Vec<f64>)
     (mpc, pi)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn dfs(
     mol: &Molecule,
     current: NodeIndex,
@@ -86,16 +96,7 @@ fn dfs(
         pi[new_depth] += new_weight;
 
         visited[nbr.index()] = true;
-        dfs(
-            mol,
-            nbr,
-            visited,
-            new_depth,
-            max_depth,
-            new_weight,
-            mpc,
-            pi,
-        );
+        dfs(mol, nbr, visited, new_depth, max_depth, new_weight, mpc, pi);
         visited[nbr.index()] = false;
     }
 }
