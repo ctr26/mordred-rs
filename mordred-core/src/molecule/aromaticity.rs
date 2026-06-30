@@ -5,6 +5,7 @@
 /// from the bond topology and marks atoms/bonds accordingly, so that
 /// Kekulized and aromatic SMILES produce identical descriptor values.
 use petgraph::graph::NodeIndex;
+use petgraph::visit::EdgeRef;
 
 use super::bond::BondOrder;
 use super::element::Element;
@@ -29,161 +30,131 @@ pub fn perceive_aromaticity(mol: &mut Molecule) {
         return;
     }
 
-    // Detect rings (we compute fresh since the lazy cache may not be populated,
-    // and we're about to mutate the molecule which would invalidate it anyway).
     let ring_info = RingInfo::detect(&mol.graph);
-    let rings = ring_info.rings().to_vec();
-
-    // Collect which atoms and bonds to mark aromatic.
-    let mut aromatic_atoms = std::collections::HashSet::new();
-    let mut aromatic_bond_pairs: Vec<(NodeIndex, NodeIndex)> = Vec::new();
-
-    for ring in &rings {
-        let ring_size = ring.len();
-        // Only consider 5- and 6-membered rings for simple Hückel aromaticity.
-        if ring_size != 5 && ring_size != 6 {
-            continue;
-        }
-
-        if is_aromatic_ring(mol, ring) {
-            for &atom in ring {
-                aromatic_atoms.insert(atom);
-            }
-            for i in 0..ring_size {
-                let a = ring[i];
-                let b = ring[(i + 1) % ring_size];
-                aromatic_bond_pairs.push((a, b));
-            }
-        }
-    }
-
-    if aromatic_atoms.is_empty() {
-        return;
-    }
-
-    // Mark atoms as aromatic.
-    for &idx in &aromatic_atoms {
-        mol.graph[idx].is_aromatic = true;
-    }
-
-    // Mark bonds as aromatic.
-    for (a, b) in &aromatic_bond_pairs {
-        if let Some(edge) = mol.graph.find_edge(*a, *b) {
-            let bond = &mut mol.graph[edge];
-            bond.order = BondOrder::Aromatic;
-            bond.is_aromatic = true;
-        }
-    }
-
-    // Recalculate implicit hydrogens for atoms whose aromaticity changed.
-    recalculate_implicit_h(mol, &aromatic_atoms);
-}
-
-/// Check whether a ring has the bond pattern of an aromatic system.
-///
-/// Requirements:
-/// - All atoms must be sp2-capable elements (C, N, O, S, Se).
-/// - The ring must have alternating single/double bonds, OR all aromatic bonds.
-/// - For 6-membered rings: classic Hückel (6 pi electrons).
-/// - For 5-membered rings: need a heteroatom lone pair donor (N, O, S) or
-///   the ring must have 2 double bonds + 1 heteroatom contributing 2 e-.
-fn is_aromatic_ring(mol: &Molecule, ring: &[NodeIndex]) -> bool {
-    let ring_size = ring.len();
-
-    // Check all atoms are sp2-capable.
-    for &idx in ring {
-        let elem = mol.graph[idx].element;
-        if !is_sp2_capable(elem) {
-            return false;
-        }
-    }
-
-    // Collect bond orders around the ring.
-    let mut bond_orders: Vec<BondOrder> = Vec::with_capacity(ring_size);
-    for i in 0..ring_size {
-        let a = ring[i];
-        let b = ring[(i + 1) % ring_size];
-        let edge = mol.graph.find_edge(a, b);
-        match edge {
-            Some(e) => bond_orders.push(mol.graph[e].order),
-            None => return false, // ring nodes not actually bonded
-        }
-    }
-
-    // Check for alternating single/double bond pattern.
-    let has_alternating = is_alternating_single_double(&bond_orders);
-
-    if ring_size == 6 && has_alternating {
-        // Classic benzene-like: alternating single/double in 6-membered ring
-        // with all sp2-capable atoms -> 6 pi electrons -> aromatic.
-        return true;
-    }
-
-    if ring_size == 5 && is_alternating_5_ring(ring, &bond_orders, mol) {
-        return true;
-    }
-
-    false
-}
-
-/// Check for strict alternating single/double bonds.
-fn is_alternating_single_double(orders: &[BondOrder]) -> bool {
-    if orders.is_empty() {
-        return false;
-    }
-
-    let n = orders.len();
-    // Must have both single and double bonds.
-    let n_single = orders.iter().filter(|&&o| o == BondOrder::Single).count();
-    let n_double = orders.iter().filter(|&&o| o == BondOrder::Double).count();
-
-    if n_single + n_double != n {
-        return false; // has triple or other non-standard bond
-    }
-
-    // Check alternation: each bond must differ from its neighbors.
-    for i in 0..n {
-        let next = (i + 1) % n;
-        if orders[i] == orders[next] {
-            return false;
-        }
-    }
-    true
-}
-
-/// Check whether a 5-membered ring is aromatic.
-///
-/// A 5-membered aromatic ring (like pyrrole, furan, thiophene) has:
-/// - 2 double bonds and 1 heteroatom (N, O, S) that contributes a lone pair
-///   to make 6 pi electrons (2*2 + 2 = 6), OR
-/// - Alternating single/double with a heteroatom.
-fn is_alternating_5_ring(ring: &[NodeIndex], bond_orders: &[BondOrder], mol: &Molecule) -> bool {
-    let n_double = bond_orders
+    let rings: Vec<Vec<NodeIndex>> = ring_info
+        .rings()
         .iter()
-        .filter(|&&o| o == BondOrder::Double)
-        .count();
+        .filter(|r| r.len() == 5 || r.len() == 6)
+        .cloned()
+        .collect();
 
-    if n_double != 2 {
-        return false;
-    }
-
-    // Need exactly one heteroatom (N, O, S) that donates a lone pair.
-    // The heteroatom should be the one flanked by two single bonds.
-    let mut heteroatom_count = 0;
-    for (i, &idx) in ring.iter().enumerate() {
-        let elem = mol.graph[idx].element;
-        if matches!(elem, Element::N | Element::O | Element::S | Element::Se) {
-            // Check that this heteroatom is flanked by single bonds
-            // (it contributes the lone pair, not a pi bond).
-            let prev_bond = bond_orders[(i + ring.len() - 1) % ring.len()];
-            let next_bond = bond_orders[i];
-            if prev_bond == BondOrder::Single && next_bond == BondOrder::Single {
-                heteroatom_count += 1;
+    // Iterate to fixpoint: a ring may become aromatic only after a neighboring
+    // fused ring has been marked (its bonds become Aromatic, which then count
+    // as in-ring π contributors). EllagicAcid's lactones and the chromenylium
+    // core of Cyanidin need this propagation.
+    let mut aromatic_atoms: std::collections::HashSet<NodeIndex> = std::collections::HashSet::new();
+    let mut newly_marked = true;
+    while newly_marked {
+        newly_marked = false;
+        for ring in &rings {
+            // Skip rings whose every atom is already aromatic — they have no
+            // new state to discover and their bonds are already aromatic.
+            if ring.iter().all(|a| mol.graph[*a].is_aromatic) {
+                continue;
             }
+            if !is_aromatic_ring(mol, ring) {
+                continue;
+            }
+            for &atom in ring {
+                if aromatic_atoms.insert(atom) {
+                    mol.graph[atom].is_aromatic = true;
+                }
+            }
+            for i in 0..ring.len() {
+                if let Some(edge) = mol.graph.find_edge(ring[i], ring[(i + 1) % ring.len()]) {
+                    let bond = &mut mol.graph[edge];
+                    bond.order = BondOrder::Aromatic;
+                    bond.is_aromatic = true;
+                }
+            }
+            newly_marked = true;
         }
     }
 
-    heteroatom_count == 1
+    if !aromatic_atoms.is_empty() {
+        recalculate_implicit_h(mol, &aromatic_atoms);
+    }
+}
+
+/// Check whether a ring is aromatic via Hückel's rule on per-atom π contributions.
+///
+/// Each ring atom contributes π electrons based on its local context:
+/// - In-ring double (or aromatic) bond: 1 electron (pyridine-like sp²).
+/// - Exocyclic double bond (=O, =N, =C): 0 to the ring, but sp² maintained
+///   (handles carbonyl carbons in uracil/caffeine-style pyrimidinediones).
+/// - In-ring singles only + N/O/S lone-pair donor: 2 electrons (pyrrole-like).
+/// - Otherwise: not sp² → ring is not aromatic.
+///
+/// The ring is aromatic iff the π-electron sum satisfies Hückel's rule
+/// (`π = 4n + 2`, n ≥ 0 → π ∈ {2, 6, 10, …}) and all atoms are sp²-capable.
+fn is_aromatic_ring(mol: &Molecule, ring: &[NodeIndex]) -> bool {
+    let n = ring.len();
+
+    for &idx in ring {
+        if !is_sp2_capable(mol.graph[idx].element) {
+            return false;
+        }
+    }
+
+    let mut bond_orders: Vec<BondOrder> = Vec::with_capacity(n);
+    for i in 0..n {
+        match mol.graph.find_edge(ring[i], ring[(i + 1) % n]) {
+            Some(e) => bond_orders.push(mol.graph[e].order),
+            None => return false,
+        }
+    }
+
+    let ring_set: std::collections::HashSet<NodeIndex> = ring.iter().copied().collect();
+    let mut pi: u32 = 0;
+    for (i, &atom) in ring.iter().enumerate().take(n) {
+        match ring_pi_contribution(mol, atom, &ring_set, &bond_orders, i) {
+            Some(p) => pi += p,
+            None => return false,
+        }
+    }
+
+    pi >= 2 && (pi - 2) % 4 == 0
+}
+
+/// π-electron contribution for one ring atom, or `None` if it can't be sp².
+fn ring_pi_contribution(
+    mol: &Molecule,
+    idx: NodeIndex,
+    ring_set: &std::collections::HashSet<NodeIndex>,
+    bond_orders: &[BondOrder],
+    i: usize,
+) -> Option<u32> {
+    let n = bond_orders.len();
+    let prev = bond_orders[(i + n - 1) % n];
+    let next = bond_orders[i];
+
+    let in_ring_pi = matches!(
+        prev,
+        BondOrder::Double | BondOrder::Aromatic | BondOrder::Triple
+    ) || matches!(
+        next,
+        BondOrder::Double | BondOrder::Aromatic | BondOrder::Triple
+    );
+    if in_ring_pi {
+        return Some(1);
+    }
+
+    let has_exocyclic_double = mol.graph.edges(idx).any(|e| {
+        let other = if e.source() == idx {
+            e.target()
+        } else {
+            e.source()
+        };
+        !ring_set.contains(&other) && e.weight().order == BondOrder::Double
+    });
+    if has_exocyclic_double {
+        return Some(0);
+    }
+
+    match mol.graph[idx].element {
+        Element::N | Element::O | Element::S | Element::Se => Some(2),
+        _ => None,
+    }
 }
 
 /// Check if an element is capable of sp2 hybridization.
@@ -316,5 +287,34 @@ mod tests {
         // If the ring detection works correctly, atoms should be aromatic.
         let aromatic_count = mol.graph.node_weights().filter(|a| a.is_aromatic).count();
         assert_eq!(aromatic_count, 5, "pyrrole should have 5 aromatic atoms");
+    }
+
+    #[test]
+    fn test_caffeine_pyrimidinedione_aromatic() {
+        // Caffeine's 6-ring is a pyrimidinedione: 2 ring N's flanked by single
+        // bonds (pyrrole-like, 2 π each), 2 exocyclic carbonyls (sp² via =O,
+        // 0 π each), 2 fused C's with in-ring double (1 π each). Hückel π = 6.
+        let mol = parse_smiles("CN1C=NC2=C1C(=O)N(C(=O)N2C)C").unwrap();
+        let aromatic_atoms = mol.graph.node_weights().filter(|a| a.is_aromatic).count();
+        // Caffeine has 9 aromatic atoms across the imidazole (5) and
+        // pyrimidinedione (6) fused-system, sharing 2 atoms → 5 + 6 - 2 = 9.
+        assert_eq!(
+            aromatic_atoms, 9,
+            "caffeine should have 9 aromatic atoms (imidazole + pyrimidinedione fused), got {aromatic_atoms}"
+        );
+    }
+
+    #[test]
+    fn test_ellagic_acid_fully_aromatic() {
+        // Ellagic acid: 4 fused 6-rings (2 benzenes + 2 fused 6-membered
+        // lactones). Aromaticity propagates through the fused system via the
+        // fixpoint loop — lactone rings only register aromatic after their
+        // adjacent benzene rings are marked.
+        let mol = parse_smiles("C1=C2C3=C(C(=C1O)O)OC(=O)C4=CC(=C(C(=C43)OC2=O)O)O").unwrap();
+        let aromatic_atoms = mol.graph.node_weights().filter(|a| a.is_aromatic).count();
+        assert!(
+            aromatic_atoms >= 14,
+            "ellagic acid should have ≥14 aromatic atoms via fused-ring propagation, got {aromatic_atoms}"
+        );
     }
 }

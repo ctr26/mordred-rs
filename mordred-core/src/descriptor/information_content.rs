@@ -45,21 +45,16 @@ fn atom_equivalence_counts(mol: &Molecule) -> (Vec<u32>, u32) {
     (counts, total)
 }
 
-/// Compute bond equivalence class counts based on bond order.
-fn bond_equivalence_counts(mol: &Molecule) -> (Vec<u32>, u32) {
-    let props = mol.properties();
-    let counts: Vec<u32> = [
-        props.single_bond_count + props.implicit_h_sum, // single bonds include implicit H bonds
-        props.double_bond_count,
-        props.triple_bond_count,
-        props.aromatic_bond_count,
-    ]
-    .iter()
-    .copied()
-    .filter(|&c| c > 0)
-    .collect();
-    let total = props.total_bond_count;
-    (counts, total)
+/// Sum of bond orders (aromatic = 1.5; each implicit H contributes one single).
+///
+/// Mirrors upstream's `sum(b.GetBondTypeAsDouble() for b in mol.GetBonds())`
+/// under `explicit_hydrogens=True`. For pure 6-membered aromatic rings the
+/// 1.5-weight sum equals the kekulized single+double sum; they may differ for
+/// odd-membered aromatic rings (resolved by upstream via `kekulize=True` on
+/// the RDKit side).
+fn sum_bond_orders(mol: &Molecule) -> f64 {
+    let explicit: f64 = mol.bonds().map(|(_, _, b)| b.order.as_f64()).sum();
+    explicit + f64::from(mol.properties().implicit_h_sum)
 }
 
 /// IC0: Mean information content (Shannon entropy of atom element classes).
@@ -135,7 +130,12 @@ impl Descriptor for ComplementaryInformationContent {
     }
 }
 
-/// BIC0: Bond information content (Shannon entropy of bond order classes).
+/// BIC0: Bonding information content = IC0 / log2(Σ bond_orders).
+///
+/// Upstream definition (mordred Python `BondingIC`): the atom-level Shannon
+/// entropy IC0 normalized by the log of the sum of weighted bond orders, not a
+/// separate bond-class entropy. With `explicit_hydrogens=True` upstream
+/// includes implicit-H single bonds in the sum.
 pub struct BondInformationContent;
 
 impl Descriptor for BondInformationContent {
@@ -146,12 +146,16 @@ impl Descriptor for BondInformationContent {
         "Bond information content (order 0)"
     }
     fn calculate(&self, mol: &Molecule) -> Result<f64, MordredError> {
-        let (counts, total) = bond_equivalence_counts(mol);
+        let (counts, total) = atom_equivalence_counts(mol);
         if total <= 1 {
             return Ok(0.0);
         }
+        let b = sum_bond_orders(mol);
+        if b <= 1.0 {
+            return Ok(0.0);
+        }
         let ic = shannon_entropy(&counts, total);
-        Ok(ic / (total as f64).log2())
+        Ok(ic / b.log2())
     }
 }
 
@@ -240,26 +244,30 @@ mod tests {
 
     #[test]
     fn test_bic0_ethanol() {
-        // Ethanol CCO: bonds include implicit H.
-        // single bonds = 2 (C-C, C-O) + 6 implicit H bonds = 8 single
-        // All bonds are single, so entropy = 0, BIC = 0
+        // Ethanol CCO: 9 atoms (2C + 1O + 6H), IC0 = entropy([2,1,6]/9) ≈ 1.22440.
+        // Sum bond orders = 2 explicit singles + 6 implicit H = 8; log2(8) = 3.
+        // BIC0 ≈ 1.22440 / 3 ≈ 0.40813.
         let mol = parse_smiles("CCO").unwrap();
         let bic = BondInformationContent.calculate(&mol).unwrap();
+        let expected = 0.408_131_67;
         assert!(
-            (bic - 0.0).abs() < 1e-10,
-            "BIC0 ethanol (all single) should be 0, got {bic}"
+            (bic - expected).abs() < 1e-6,
+            "BIC0 ethanol: got {bic}, expected {expected}"
         );
     }
 
     #[test]
     fn test_bic0_formaldehyde() {
-        // Formaldehyde C=O: explicit bonds = 1 double (C=O)
-        // implicit H bonds: C has 2 implicit H → 2 single bonds
-        // total = 3 bonds: 2 single + 1 double
-        // p(single) = 2/3, p(double) = 1/3
+        // Formaldehyde C=O: 4 atoms (C+O+2H), IC0 = entropy([1,1,2]/4) = 1.5.
+        // Sum bond orders = 1 double (2.0) + 2 implicit H singles = 4; log2(4) = 2.
+        // BIC0 = 1.5 / 2 = 0.75.
         let mol = parse_smiles("C=O").unwrap();
         let bic = BondInformationContent.calculate(&mol).unwrap();
-        assert!(bic > 0.0, "BIC0 formaldehyde should be > 0, got {bic}");
+        let expected = 0.75;
+        assert!(
+            (bic - expected).abs() < 1e-6,
+            "BIC0 formaldehyde: got {bic}, expected {expected}"
+        );
     }
 
     #[test]

@@ -1,10 +1,19 @@
 pub mod atom_count;
+pub mod balaban_j;
 pub mod bond_count;
+pub mod carbon_types;
 pub mod connectivity;
 pub mod constitutional;
+pub mod hbond;
 pub mod information_content;
+pub mod mcgowan_volume;
+pub mod path_count;
 pub mod ring_count;
+pub mod rotatable_bond;
+pub mod topo_psa;
 pub mod topological;
+pub mod vabc;
+pub mod vertex_adjacency;
 
 use crate::error::MordredError;
 use crate::molecule::Molecule;
@@ -44,6 +53,11 @@ impl DescriptorSet {
         set.add_all_bond_counts();
         set.add_all_ring_counts();
         set.add_all_information_content();
+        set.add_all_carbon_types();
+        set.add_all_vertex_adjacency();
+        set.add_all_rotatable_bond();
+        set.add_all_hbond();
+        set.add_all_mcgowan_volume();
         set
     }
 
@@ -107,6 +121,45 @@ impl DescriptorSet {
             information_content::ComplementaryInformationContent,
         ));
         self.add(Box::new(information_content::BondInformationContent));
+    }
+
+    /// Add all carbon-type descriptors: 9 `C{n}SP{m}` counters + `HybRatio`.
+    pub fn add_all_carbon_types(&mut self) {
+        // sp¹: 1 or 2 C neighbors
+        for n in 1..=2 {
+            self.add(Box::new(carbon_types::CarbonTypeCount::new(n, 1)));
+        }
+        // sp²: 1, 2, or 3 C neighbors
+        for n in 1..=3 {
+            self.add(Box::new(carbon_types::CarbonTypeCount::new(n, 2)));
+        }
+        // sp³: 1, 2, 3, or 4 C neighbors
+        for n in 1..=4 {
+            self.add(Box::new(carbon_types::CarbonTypeCount::new(n, 3)));
+        }
+        self.add(Box::new(carbon_types::HybRatio));
+    }
+
+    /// Add the `VAdjMat` vertex-adjacency descriptor.
+    pub fn add_all_vertex_adjacency(&mut self) {
+        self.add(Box::new(vertex_adjacency::VertexAdjacencyMagnitude));
+    }
+
+    /// Add rotatable-bond descriptors: `nRot` and `RotRatio`.
+    pub fn add_all_rotatable_bond(&mut self) {
+        self.add(Box::new(rotatable_bond::RotatableBondCount));
+        self.add(Box::new(rotatable_bond::RotatableBondRatio));
+    }
+
+    /// Add hydrogen-bond descriptors: `nHBDon` and `nHBAcc`.
+    pub fn add_all_hbond(&mut self) {
+        self.add(Box::new(hbond::HBondDonor));
+        self.add(Box::new(hbond::HBondAcceptor));
+    }
+
+    /// Add the `VMcGowan` characteristic-volume descriptor.
+    pub fn add_all_mcgowan_volume(&mut self) {
+        self.add(Box::new(mcgowan_volume::McGowanVolume));
     }
 
     /// Add all bond type count descriptors.
